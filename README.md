@@ -126,3 +126,20 @@ Notable changes in this step:
 - For now, we've hard coded the width of the side window and created a side panel window.
 - A `draw_side` and `draw_main` function were added to add some embelished text to those windows.
 - The main function inits the UI state and adds the side window to the layout when `p` is pressed.`
+
+## Step 6: Adding overlays.
+In this step `curses.panels` is used to add overlays to the screen.
+- A simple placeholder for the overlay state is added to the UI state.
+- The new `center_rect` function creates a centered rectangle for the overlay.
+- The `draw_overlay` function handles the heavy lifting of creating the overlay.
+  - Uses the main window (`stdscr`) to build cords and then create the panel window.
+    - Note that the panel window is created with the `new_panel` function. and it is passed a curses window.
+  - Adds possible panels to the `cureses.panel`.
+  - Uses the familiar draw_box function to draw the box around the overlay.
+  - Adds the text to the overlay.
+  - Adds the center rect to the overlay.
+  - adds the new window to the overlay panel.
+- The main function is updated to handle handling the overlay state.
+  - Note here that `update_panels()` is called after the layout is computed.
+    - This is because the layout is computed before the screen is resized.
+    - If we didn't call `update_panels()` after the layout is computed, the layout would be incorrect.`

@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-
 import curses
+import curses.panel
 import textwrap
 from collections import deque
 from dataclasses import dataclass
@@ -25,6 +24,7 @@ def clamp(val, min_val, max_val):
 @dataclass
 class UIState:
     show_side: bool = False
+    overlay: str | None = None
 
 
 class LogBuffer:
@@ -107,6 +107,43 @@ def draw_main(win):
         except curses.error:
             pass
 
+def center_rect(height, width, box_height, box_width):
+    r = Rect(
+        max(0, (height - box_height) // 2),
+        max(0, (width - box_width) // 2),
+        min(box_height, height),
+        min(box_width, width)
+    )
+    return r
+
+def draw_overlay_panels(stdscr, state: UIState):
+    panels = []
+
+    if state.overlay is None:
+        return panels
+
+    height, width = stdscr.getmaxyx()
+    r = center_rect(height, width, 12, 46)
+    win = curses.newwin(r.h, r.w, r.y, r.x)
+    pan = curses.panel.new_panel(win)
+    title = "Inventory" if state.overlay == "inventory" else "Inspect Items"
+    panels.append(pan)
+    draw_box(win, title)
+    inventory_contents = ["Inventory:", "1) Sword", "2) Torch", "3) Key"]
+    inspect_contents = ["A thing:", "thing...", "thing...", "thing..."]
+    content = inventory_contents if state.overlay == "inventory" else inspect_contents
+    h, w = win.getmaxyx()
+    y = 1
+    for line in content:
+        if y >= h - 1:
+            break
+        try:
+            win.addnstr(y, 2, line, w - 4)
+        except curses.error:
+            pass
+        y += 1
+    return panels
+
 
 def main(stdscr):
     curses.curs_set(0)
@@ -117,21 +154,25 @@ def main(stdscr):
     message = "Welcome to the curses GUI: press q to quit, g:add to log"
     log.add(message)
     log.add("Press 'p' to toggle the side panel")
+    log.add("Press 'i=inventory', 'o=inspect', 'esc=close'")
 
     while True:
         top_rect, main_rect, log_rect, side_rect = compute_layout(stdscr, state)
         # top bar on stdscr
         stdscr.erase()
-        stdscr.addnstr(0, 0, "q:quit g:add log", top_rect.printable_width(), curses.A_REVERSE)
+        stdscr.addnstr(0, 0, "q:quit g:add log i:inv o:inspect esc: close", top_rect.printable_width(), curses.A_REVERSE)
 
         # Creating windows
         main_win = curses.newwin(main_rect.h, main_rect.w, main_rect.y, main_rect.x)
         draw_main(main_win)
 
+        side_win = None
         if side_rect:
             side_win = curses.newwin(side_rect.h, side_rect.w, side_rect.y, side_rect.x)
             draw_side(side_win)
             draw_box(side_win, "Side Panel")
+
+        overlay_panels = draw_overlay_panels(stdscr, state)
 
         main_win.box()
         try:
@@ -147,6 +188,7 @@ def main(stdscr):
         main_win.noutrefresh()
         log_win.noutrefresh()
         side_win.noutrefresh() if side_rect else None
+        curses.panel.update_panels()
         curses.doupdate()
 
         ch = stdscr.getch()
@@ -165,6 +207,28 @@ def main(stdscr):
             continue
         if ch == ord('p'):
             state.show_side = not state.show_side
+            continue
+        if ch == ord('i'):
+            state.overlay = "inventory"
+            continue
+        if ch == ord('o'):
+            state.overlay = "inspect"
+            continue
+        if ch == 27:
+            state.overlay = None
+            # note, that there is a delay when hitting `esc`, this is because ncurses waits for
+            # additional characters to be sent as part of an escape sequence.  This can be controled
+            # curses.set_escdelay() or ESCDELAY=25 python rogui.py or
+            # we can close the overlay immediately and clear any pending escape sequence doing the following
+            # right
+            # stdscr.nodelay(True)
+            # while stdscr.getch() != -1:
+            #    pass
+            # stdscr.nodelay(False)
+            continue
+
+        if state.overlay and ch != -1:
+            state.overlay = None
 
 if __name__ == '__main__':
     curses.wrapper(main)
