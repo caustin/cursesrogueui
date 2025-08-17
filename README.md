@@ -74,6 +74,13 @@ if __name__ == "__main__":
     run()
 ```
 
+## Step 2: Updating the app loop and handling screen resizing.
 
-
-
+- Adding `curses.use_default_colors()` before entering the loop to use the default colors.
+- Check if the screen is resized by checking if `stdscr.getch()` returns a `curses.KEY_RESIZE` code.
+  - If the screen is resized, called get the updated height and width of the screen.
+  - Some terminals emit this when the terminal is resized.
+  - Re-check the size (h, w = stdscr.getmaxyx()).
+  - If curses.is_term_resized(h, w) says the internal state needs updating, call curses.resizeterm(h, w) so curses recalculates layout/buffers.
+  - Use `curses.resizeterm(height, width)` help curses resize to match the terminal.
+  
