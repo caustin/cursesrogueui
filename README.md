@@ -1,7 +1,11 @@
 # Introduction
 
-A tutorial for learning curses for building a roguelike game in python.
-This is just for learning cureses.
+This repo should serve as a self-guided tutorial for learning curses.
+I'm interested in building a basic rougelike game in python and curses with minimal external dependencies.
+As a part of that, I need to learn python's curses library and will try to document my learnings here.  
+
+As I go through and figure out curses I'll add more explanations and learnings to this readme.
+
 
 ## Step 1: understanding how to draw a basic window in cures.
 - Pass a screen object (`stdscr`) to the main function.
