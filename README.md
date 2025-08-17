@@ -115,4 +115,14 @@ In this step we add a log buff class that contains a list of log messages and wr
 - The main function is updated to add a log buffer to the layout.
   - The log buffer is updated to add a new log message.
   - We are no longer using the `draw_box` function to draw boxes around the windows. 
-    This is handled by the `box()` method of the curses window. 
+    This is handled by the `box()` method of the curses window.
+
+## Step 5: Adding a togglable side window.
+In this step we add a side window that can be toggled on and off.
+This isn't super remarkable but it lets us experiment with the layout. For now, the main window's
+width isn't recalculated when the side window is toggled on or off; but we should do that in the future.
+Notable changes in this step:
+- A simple placeholder class for the UI state was added to track the state of the side window.
+- For now, we've hard coded the width of the side window and created a side panel window.
+- A `draw_side` and `draw_main` function were added to add some embelished text to those windows.
+- The main function inits the UI state and adds the side window to the layout when `p` is pressed.`

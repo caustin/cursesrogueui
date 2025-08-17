@@ -22,6 +22,11 @@ def clamp(val, min_val, max_val):
     return max(min_val, min(val, max_val))
 
 
+@dataclass
+class UIState:
+    show_side: bool = False
+
+
 class LogBuffer:
     def __init__(self, capacity=500):
         self.lines = deque(maxlen=capacity)
@@ -53,17 +58,21 @@ class LogBuffer:
                 y += 1
 
 
-def compute_layout(stdscr):
+def compute_layout(stdscr, state: UIState):
     """Compute the layout of all the windows in the main screen"""
     heigh, width = stdscr.getmaxyx()
     top_height = 1
     log_height = clamp(heigh - 5, 3, 7)
     body_height = max(3, heigh - top_height - log_height)
 
+    # the width of the sidebar
+    side_width = 28 if state.show_side and width >=60 else 0
+
     top_r = Rect(0, 0, top_height, width)
     main_r = Rect(top_height, 0, body_height, width)
     log_r = Rect(top_height + body_height, 0, log_height, width)
-    return top_r, main_r, log_r
+    side_r = Rect(top_height, width - side_width, body_height, side_width) if side_width else None
+    return top_r, main_r, log_r, side_r
 
 
 def draw_box(win, title=None):
@@ -78,23 +87,52 @@ def draw_box(win, title=None):
         except curses.error:
             raise
 
+def draw_side(win):
+    items = ["Player", "HP: x/y", "Quests", "-  Find the key", "", "Tips", "Press 'i' overlay"]
+    h, w = win.getmaxyx()
+    y = 1
+    for line in items:
+        try:
+            win.addnstr(y, 1, line, w - 2)
+        except curses.error:
+            pass
+        y += 1
+
+def draw_main(win):
+    h, w = win.getmaxyx()
+    # fill the window with a bunch of .'s
+    for y in range(1, h-1):
+        try:
+            win.addnstr(y, 1, "." * (w - 2), w - 2)
+        except curses.error:
+            pass
+
 
 def main(stdscr):
     curses.curs_set(0)
     stdscr.keypad(True)
     curses.use_default_colors()  # let the terminal background color be what we see
+    state = UIState()
     log = LogBuffer(1000)
     message = "Welcome to the curses GUI: press q to quit, g:add to log"
     log.add(message)
+    log.add("Press 'p' to toggle the side panel")
 
     while True:
-        top_rect, main_rect, log_rect = compute_layout(stdscr)
+        top_rect, main_rect, log_rect, side_rect = compute_layout(stdscr, state)
         # top bar on stdscr
         stdscr.erase()
         stdscr.addnstr(0, 0, "q:quit g:add log", top_rect.printable_width(), curses.A_REVERSE)
 
         # Creating windows
         main_win = curses.newwin(main_rect.h, main_rect.w, main_rect.y, main_rect.x)
+        draw_main(main_win)
+
+        if side_rect:
+            side_win = curses.newwin(side_rect.h, side_rect.w, side_rect.y, side_rect.x)
+            draw_side(side_win)
+            draw_box(side_win, "Side Panel")
+
         main_win.box()
         try:
             main_win.addstr(0, 2, "Main", curses.A_BOLD)
@@ -108,6 +146,7 @@ def main(stdscr):
         stdscr.noutrefresh()
         main_win.noutrefresh()
         log_win.noutrefresh()
+        side_win.noutrefresh() if side_rect else None
         curses.doupdate()
 
         ch = stdscr.getch()
@@ -124,6 +163,8 @@ def main(stdscr):
             h, w = stdscr.getmaxyx()
             log.add(f"TICK: terminal is: {h}*{w}")
             continue
+        if ch == ord('p'):
+            state.show_side = not state.show_side
 
 if __name__ == '__main__':
     curses.wrapper(main)
