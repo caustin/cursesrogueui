@@ -83,4 +83,24 @@ if __name__ == "__main__":
   - Re-check the size (h, w = stdscr.getmaxyx()).
   - If curses.is_term_resized(h, w) says the internal state needs updating, call curses.resizeterm(h, w) so curses recalculates layout/buffers.
   - Use `curses.resizeterm(height, width)` help curses resize to match the terminal.
-  
+
+## Step 3: Calculation the layout.
+
+In this step, we figure out how to calculate the layout of the 'static' windows on the screen.
+- We create a simple dataclase to hold the layout information.
+- Then we add a clamp function to constrain the values to the range of the screen.
+- The compute_layout function takes the screen size and the layout dataclass and returns the layout.
+  - The max height and width calcualtion is moved into the compute_layout function.
+  - For now, the starting y-position of the windows is hard coded.
+  - The height and width of the windows are hard coded.
+  - Notice that the heigh of the main window is used to both the size of the main window and the size of the log window.
+- The draw_box function draws a box around the window and adds a title.
+- The main function is updated to get the layout and draw the windows using the new function.
+  - Its import to notice that `noutrefresh()` is called after the layout is computed.
+    - This is because the layout is computed before the screen is resized.
+    - If we didn't call `noutrefresh()` after the layout is computed, the layout would be incorrect.`
+  - Finally, we call `curses.doupdate()` to update the screen.`
+    - `doupdate()` is a blocking call that waits for the screen to be updated.
+    - This is important because the screen is updated asynchronously.
+    - If we don't call `doupdate()` after the layout is computed, the screen would be updated before the layout is computed.
+    - This would cause the layout to be incorrect.`
