@@ -104,3 +104,15 @@ In this step, we figure out how to calculate the layout of the 'static' windows 
     - This is important because the screen is updated asynchronously.
     - If we don't call `doupdate()` after the layout is computed, the screen would be updated before the layout is computed.
     - This would cause the layout to be incorrect.`
+
+## Step 4: Adding logging to the bottom log window.
+In this step we add a log buff class that contains a list of log messages and wrapps text and renders it.
+- The core part of `LogBuffer` is in the `render()` method which takes a window and determines it's max size.
+- The textwrap module is used to wrap the text inside the window. 
+  - Note the heigh calculation is done in the `render()` method to determine where to 
+  start displaying the text.  For now new text event are displayed at the bottom.
+
+- The main function is updated to add a log buffer to the layout.
+  - The log buffer is updated to add a new log message.
+  - We are no longer using the `draw_box` function to draw boxes around the windows. 
+    This is handled by the `box()` method of the curses window. 
